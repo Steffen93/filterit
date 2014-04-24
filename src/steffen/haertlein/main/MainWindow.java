@@ -36,8 +36,6 @@ import javax.swing.text.Highlighter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
-import net.miginfocom.swing.MigLayout;
-
 import org.jdesktop.swingx.JXTable;
 
 public class MainWindow extends JFrame {
@@ -78,10 +76,10 @@ public class MainWindow extends JFrame {
 	private void initGUI() {
 		JPanel mainPanel = new JPanel();
 		getContentPane().add(mainPanel, BorderLayout.CENTER);
-		mainPanel.setLayout(new MigLayout("", "[grow]", "[grow]"));
+		mainPanel.setLayout(new BorderLayout(0, 0));
 
 		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		mainPanel.add(tabbedPane, "cell 0 0,grow");
+		mainPanel.add(tabbedPane);
 
 		JPanel panel_8 = new JPanel();
 		tabbedPane.addTab("Dateien", null, panel_8, null);
@@ -457,12 +455,13 @@ public class MainWindow extends JFrame {
 		textArea.setText("");
 		List<String> lines;
 		textArea.append("Angewandte Filterregeln:" + System.lineSeparator());
-		for(int z = 0; z < rules.size(); z++){
+		for (int z = 0; z < rules.size(); z++) {
 			textArea.append(rules.get(z).toString() + System.lineSeparator());
 		}
-		textArea.append(System.lineSeparator() + "Ergebnis der Filterung: " + System.lineSeparator() + System.lineSeparator());
+		textArea.append(System.lineSeparator() + "Ergebnis der Filterung: "
+				+ System.lineSeparator() + System.lineSeparator());
 		for (int i = 0; i < selectedFiles.size(); i++) {
-			for(int k = 0; k < rules.size(); k++){
+			for (int k = 0; k < rules.size(); k++) {
 				selectedFiles.get(i).applyRule(rules.get(k));
 			}
 			lines = selectedFiles.get(i).getLines();
