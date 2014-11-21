@@ -22,6 +22,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTree;
@@ -36,8 +37,6 @@ import javax.swing.text.Highlighter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
-import org.jdesktop.swingx.JXTable;
-
 public class MainWindow extends JFrame {
 
 	/**
@@ -50,7 +49,7 @@ public class MainWindow extends JFrame {
 	private File currentPath;
 	private JTextArea textArea;
 	private JTextField ruleTextField;
-	private JXTable filterTable;
+	private JTable filterTable;
 	private DefaultTableModel tableModel;
 	private String[] columnNames;
 	private String[][] tableData = new String[0][];
@@ -214,8 +213,7 @@ public class MainWindow extends JFrame {
 
 		columnNames = new String[] { "Name", "Zeilen davor", "Zeilen danach" };
 		tableModel = new DefaultTableModel(tableData, columnNames);
-		filterTable = new JXTable(tableModel);
-		filterTable.setEditable(false);
+		filterTable = new JTable(tableModel);
 		filterTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane scrollPane = new JScrollPane(filterTable);
 		panel_2.add(scrollPane);
@@ -252,7 +250,7 @@ public class MainWindow extends JFrame {
 		});
 		panel_4.add(btnZurueck);
 
-		JButton btnApplyFilter = new JButton("Filtern");
+		JButton btnApplyFilter = new JButton("Weiter");
 		panel_4.add(btnApplyFilter);
 		btnApplyFilter.addActionListener(new ActionListener() {
 
