@@ -58,14 +58,15 @@ public class MainWindow extends JFrame {
 	private Highlighter hiLighter;
 	private Highlighter.HighlightPainter coloredPainter = new DefaultHighlighter.DefaultHighlightPainter(
 			Color.RED);
-	private JButton btnWeiter;
+	private JButton btnContinue;
 	private JTextField txtLinesBefore;
 	private JTextField txtLinesAfter;
 	private JLabel lblInformation;
+	private JPanel mainPanel;
 
 	public MainWindow() {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setTitle("My File Parser");
+		setTitle("FindIT");
 		initGUI();
 		pack();
 		setMinimumSize(getSize());
@@ -73,81 +74,71 @@ public class MainWindow extends JFrame {
 	}
 
 	private void initGUI() {
-		JPanel mainPanel = new JPanel();
-		getContentPane().add(mainPanel, BorderLayout.CENTER);
-		mainPanel.setLayout(new BorderLayout(0, 0));
+		initMainPanel();
+		initFilesPanel();
+		initFilterRulesPanel();
+		initOutputPanel();
+	}
 
-		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		mainPanel.add(tabbedPane);
+	private void initOutputPanel() {
+		JPanel outputPanel = new JPanel();
+		tabbedPane.addTab("Output", outputPanel);
+		tabbedPane.setEnabledAt(2, false);
+		outputPanel.setLayout(new BorderLayout(0, 0));
+		textArea = new JTextArea();
+		textArea.setEditable(false);
+		JScrollPane textPane = new JScrollPane(textArea);
+		outputPanel.add(textPane);
+		textPane.setMinimumSize(new Dimension(300, 200));
 
-		JPanel panel_8 = new JPanel();
-		tabbedPane.addTab("Dateien", null, panel_8, null);
-		panel_8.setLayout(new BorderLayout(0, 0));
-		tree = new JTree();
-		tree.setModel(treeModel);
+		JPanel southPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		outputPanel.add(southPanel, BorderLayout.SOUTH);
 
-		JScrollPane treePane = new JScrollPane(tree);
-		panel_8.add(treePane, BorderLayout.CENTER);
-		treePane.setMinimumSize(new Dimension(200, 200));
-
-		JPanel panel_9 = new JPanel();
-		FlowLayout flowLayout = (FlowLayout) panel_9.getLayout();
-		flowLayout.setAlignment(FlowLayout.LEFT);
-		panel_8.add(panel_9, BorderLayout.NORTH);
-
-		JButton btnChooseFiles = new JButton("Dateien wählen...");
-
-		btnChooseFiles.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				try {
-					if (chooseFiles()) {
-						tabbedPane.setEnabledAt(1, true);
-						btnWeiter.setEnabled(true);
-					}
-				} catch (IOException | BadLocationException e) {
-					e.printStackTrace();
-				}
-			}
-		});
-		panel_9.add(btnChooseFiles);
-
-		JPanel panel_10 = new JPanel();
-		panel_8.add(panel_10, BorderLayout.SOUTH);
-		panel_10.setLayout(new BorderLayout(0, 0));
-
-		JPanel panel_11 = new JPanel();
-		panel_10.add(panel_11, BorderLayout.WEST);
-
-		lblInformation = new JLabel("");
-		panel_11.add(lblInformation);
-
-		JPanel panel_5 = new JPanel();
-		panel_10.add(panel_5, BorderLayout.EAST);
-
-		btnWeiter = new JButton("Weiter");
-		panel_5.add(btnWeiter);
-		btnWeiter.setEnabled(false);
-		btnWeiter.addActionListener(new ActionListener() {
+		JButton btnAdaptFilter = new JButton("Adapt Filters");
+		btnAdaptFilter.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				tabbedPane.setSelectedIndex((tabbedPane.getSelectedIndex() + 1)
-						% tabbedPane.getTabCount());
+				tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex() - 1);
 			}
 		});
 
-		JPanel panel = new JPanel();
-		tabbedPane.addTab("Filterregeln", null, panel, null);
-		tabbedPane.setEnabledAt(1, false);
-		panel.setLayout(new BorderLayout(0, 0));
+		JButton btnChooseFiles = new JButton("Choose Files");
+		btnChooseFiles.addActionListener(new ActionListener() {
 
-		JPanel panel_1 = new JPanel();
-		panel.add(panel_1, BorderLayout.NORTH);
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				tabbedPane.setSelectedIndex(0);
+			}
+		});
+		southPanel.add(btnChooseFiles);
+		southPanel.add(btnAdaptFilter);
+
+		JButton btnSave = new JButton("Save...");
+		btnSave.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				saveFile();
+			}
+		});
+		southPanel.add(btnSave);
+
+		hiLighter = textArea.getHighlighter();
+	}
+
+	private void initFilterRulesPanel() {
+		JPanel filterRulesPanel = new JPanel(new BorderLayout(0, 0));
+		tabbedPane.addTab("Filter Rules", filterRulesPanel);
+		tabbedPane.setEnabledAt(1, false);
+
+		JPanel northPanel = new JPanel();
+		filterRulesPanel.add(northPanel, BorderLayout.NORTH);
 
 		ruleTextField = new JTextField();
-		ruleTextField.setColumns(10);
+		ruleTextField.setColumns(15);
 
-		JButton btnAddRule = new JButton("Regel hinzufügen");
+		JButton btnAddRule = new JButton("Add Rule");
 		btnAddRule.addActionListener(new ActionListener() {
 
 			@Override
@@ -155,18 +146,18 @@ public class MainWindow extends JFrame {
 				addRule();
 			}
 		});
-		panel_1.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+		northPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 
 		JLabel lblText = new JLabel("Text:");
 		lblText.setLabelFor(ruleTextField);
-		panel_1.add(lblText);
-		panel_1.add(ruleTextField);
+		northPanel.add(lblText);
+		northPanel.add(ruleTextField);
 
-		JLabel lblZeilenDavor = new JLabel("Zeilen davor:");
-		panel_1.add(lblZeilenDavor);
+		JLabel lblLinesBefore = new JLabel("Lines before:");
+		northPanel.add(lblLinesBefore);
 
 		txtLinesBefore = new JTextField();
-		lblZeilenDavor.setLabelFor(txtLinesBefore);
+		lblLinesBefore.setLabelFor(txtLinesBefore);
 		txtLinesBefore.setHorizontalAlignment(SwingConstants.TRAILING);
 		txtLinesBefore.setText("0");
 		txtLinesBefore.addFocusListener(new FocusListener() {
@@ -182,13 +173,13 @@ public class MainWindow extends JFrame {
 			}
 		});
 		txtLinesBefore.setColumns(3);
-		panel_1.add(txtLinesBefore);
+		northPanel.add(txtLinesBefore);
 
-		JLabel lblZeilenDanach = new JLabel("Zeilen danach:");
-		panel_1.add(lblZeilenDanach);
+		JLabel lblLinesAfter = new JLabel("Lines after:");
+		northPanel.add(lblLinesAfter);
 
 		txtLinesAfter = new JTextField();
-		lblZeilenDanach.setLabelFor(txtLinesAfter);
+		lblLinesAfter.setLabelFor(txtLinesAfter);
 		txtLinesAfter.setHorizontalAlignment(SwingConstants.TRAILING);
 		txtLinesAfter.setText("0");
 		txtLinesAfter.setColumns(3);
@@ -204,43 +195,52 @@ public class MainWindow extends JFrame {
 				txtLinesBefore.selectAll();
 			}
 		});
-		panel_1.add(txtLinesAfter);
-		panel_1.add(btnAddRule);
+		northPanel.add(txtLinesAfter);
+		northPanel.add(btnAddRule);
 
-		JPanel panel_2 = new JPanel();
-		panel.add(panel_2, BorderLayout.CENTER);
-		panel_2.setLayout(new BorderLayout(0, 0));
+		JPanel centerPanel = new JPanel(new BorderLayout(0, 0));
+		filterRulesPanel.add(centerPanel, BorderLayout.CENTER);
 
-		columnNames = new String[] { "Name", "Zeilen davor", "Zeilen danach" };
+		columnNames = new String[] { "Name", "Lines before", "Lines after" };
 		tableModel = new DefaultTableModel(tableData, columnNames);
 		filterTable = new JTable(tableModel);
 		filterTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane scrollPane = new JScrollPane(filterTable);
-		panel_2.add(scrollPane);
+		centerPanel.add(scrollPane);
 		scrollPane.setMinimumSize(new Dimension(150, 200));
 
-		JPanel panel_3 = new JPanel();
-		panel_2.add(panel_3, BorderLayout.SOUTH);
+		JPanel centerSouthPanel = new JPanel();
+		centerPanel.add(centerSouthPanel, BorderLayout.SOUTH);
 
-		JButton btnDelRules = new JButton("Ausgewählte Regeln löschen");
-		panel_3.add(btnDelRules);
-
+		JButton btnDelRules = new JButton("Delete selected Rule(s)");
+		centerSouthPanel.add(btnDelRules);
 		btnDelRules.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				delRules();
 			}
 		});
 
-		JButton btnDelAllRules = new JButton("Alle Regeln löschen");
-		panel_3.add(btnDelAllRules);
+		JButton btnDelAllRules = new JButton("Delete all Rules");
+		centerSouthPanel.add(btnDelAllRules);
+		btnDelAllRules.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if (JOptionPane.YES_OPTION == JOptionPane
+						.showConfirmDialog(
+								null,
+								"Do you really want to delete all rules?",
+								"Delete All Rules?",
+								JOptionPane.YES_NO_CANCEL_OPTION,
+								JOptionPane.WARNING_MESSAGE)) {
+					delAllRules();
+				}
+			}
+		});
+		
+		JPanel southPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		filterRulesPanel.add(southPanel, BorderLayout.SOUTH);
 
-		JPanel panel_4 = new JPanel();
-		FlowLayout flowLayout_2 = (FlowLayout) panel_4.getLayout();
-		flowLayout_2.setAlignment(FlowLayout.RIGHT);
-		panel.add(panel_4, BorderLayout.SOUTH);
-
-		JButton btnZurueck = new JButton("Zurück");
-		btnZurueck.addActionListener(new ActionListener() {
+		JButton btnBack = new JButton("Back");
+		btnBack.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -248,10 +248,10 @@ public class MainWindow extends JFrame {
 						% tabbedPane.getTabCount());
 			}
 		});
-		panel_4.add(btnZurueck);
+		southPanel.add(btnBack);
 
-		JButton btnApplyFilter = new JButton("Weiter");
-		panel_4.add(btnApplyFilter);
+		JButton btnApplyFilter = new JButton("Continue");
+		southPanel.add(btnApplyFilter);
 		btnApplyFilter.addActionListener(new ActionListener() {
 
 			@Override
@@ -264,68 +264,68 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
+	}
 
-		JPanel panel_6 = new JPanel();
-		tabbedPane.addTab("Ausgabe", null, panel_6, null);
-		tabbedPane.setEnabledAt(2, false);
-		panel_6.setLayout(new BorderLayout(0, 0));
-		textArea = new JTextArea();
-		textArea.setEditable(false);
-		JScrollPane textPane = new JScrollPane(textArea);
-		panel_6.add(textPane);
-		textPane.setMinimumSize(new Dimension(300, 200));
+	private void initFilesPanel() {
+		JPanel filesPanel = new JPanel(new BorderLayout(0, 0));
+		tabbedPane.addTab("Files", filesPanel);
+		tree = new JTree();
+		tree.setModel(treeModel);
 
-		JPanel panel_7 = new JPanel();
-		FlowLayout flowLayout_3 = (FlowLayout) panel_7.getLayout();
-		flowLayout_3.setAlignment(FlowLayout.RIGHT);
-		panel_6.add(panel_7, BorderLayout.SOUTH);
+		JScrollPane treePane = new JScrollPane(tree);
+		filesPanel.add(treePane, BorderLayout.CENTER);
+		treePane.setMinimumSize(new Dimension(200, 200));
 
-		JButton btnFilterAnpassen = new JButton("Filter anpassen");
-		btnFilterAnpassen.addActionListener(new ActionListener() {
+		JPanel northPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		filesPanel.add(northPanel, BorderLayout.NORTH);
 
-			@Override
+		JButton btnChooseFiles = new JButton("Choose Files...");
+		btnChooseFiles.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex() - 1);
-			}
-		});
-
-		JButton btnDateienAendern = new JButton("Dateien ändern");
-		btnDateienAendern.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				tabbedPane.setSelectedIndex(0);
-			}
-		});
-		panel_7.add(btnDateienAendern);
-		panel_7.add(btnFilterAnpassen);
-
-		JButton btnSpeichern = new JButton("Speichern...");
-		btnSpeichern.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				saveFile();
-			}
-		});
-		panel_7.add(btnSpeichern);
-
-		btnDelAllRules.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				if (JOptionPane.YES_OPTION == JOptionPane
-						.showConfirmDialog(
-								null,
-								"Sind Sie sicher, dass Sie alle Regeln löschen wollen?",
-								"Alle Regeln löschen",
-								JOptionPane.YES_NO_CANCEL_OPTION,
-								JOptionPane.WARNING_MESSAGE)) {
-					delAllRules();
+				try {
+					if (chooseFiles()) {
+						tabbedPane.setEnabledAt(1, true);
+						btnContinue.setEnabled(true);
+					}
+				} catch (IOException | BadLocationException e) {
+					e.printStackTrace();
 				}
 			}
 		});
+		northPanel.add(btnChooseFiles);
 
-		hiLighter = textArea.getHighlighter();
+		JPanel southPanel = new JPanel(new BorderLayout(0, 0));
+		filesPanel.add(southPanel, BorderLayout.SOUTH);
 
+		JPanel westPanel = new JPanel();
+		southPanel.add(westPanel, BorderLayout.WEST);
+
+		lblInformation = new JLabel("");
+		westPanel.add(lblInformation);
+
+		JPanel eastPanel = new JPanel();
+		southPanel.add(eastPanel, BorderLayout.EAST);
+
+		btnContinue = new JButton("Continue");
+		eastPanel.add(btnContinue);
+		btnContinue.setEnabled(false);
+		btnContinue.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				tabbedPane.setSelectedIndex((tabbedPane.getSelectedIndex() + 1)
+						% tabbedPane.getTabCount());
+			}
+		});
+	}
+
+	private void initMainPanel() {
+		mainPanel = new JPanel();
+		getContentPane().add(mainPanel, BorderLayout.CENTER);
+		mainPanel.setLayout(new BorderLayout(0, 0));
+
+		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		mainPanel.add(tabbedPane);
 	}
 
 	protected void saveFile() {
@@ -334,18 +334,18 @@ public class MainWindow extends JFrame {
 			try {
 				if (saver.getSelectedFile().exists()
 						&& JOptionPane.showConfirmDialog(this,
-								"Datei existiert bereits. Überschreiben?",
-								"Datei existiert",
+								"File already exists. Overwrite existing?",
+								"Confirm override",
 								JOptionPane.YES_NO_CANCEL_OPTION) == JOptionPane.YES_OPTION) {
 					Files.write(saver.getSelectedFile().toPath(), textArea
 							.getText().getBytes());
 					JOptionPane.showMessageDialog(this,
-							"Speichern erfolgreich.", "Speichern",
+							"Save successful.", "File saved",
 							JOptionPane.INFORMATION_MESSAGE);
 				}
 			} catch (IOException e) {
 				JOptionPane.showMessageDialog(this,
-						"Speichern fehlgeschlagen.", "Fehler",
+						"Error saving file.", "Error",
 						JOptionPane.ERROR_MESSAGE);
 			}
 		}
@@ -410,7 +410,7 @@ public class MainWindow extends JFrame {
 			}
 			if (invalidFileCount > 0) {
 				JOptionPane.showMessageDialog(null, invalidFileCount
-						+ " Dateien konnten nicht gelesen werden.", "Error",
+						+ " files could not be read.", "Error",
 						JOptionPane.ERROR_MESSAGE);
 			}
 			files = new File[selectedFiles.size()];
@@ -422,12 +422,12 @@ public class MainWindow extends JFrame {
 				JOptionPane
 						.showMessageDialog(
 								null,
-								"Es muss mindestens eine Textdatei ausgewählt werden, um fortzufahren.",
-								"Achtung", JOptionPane.INFORMATION_MESSAGE);
+								"Please choose at least one readable file to continue.",
+								"Caution", JOptionPane.INFORMATION_MESSAGE);
 				return false;
 			}
-			lblInformation.setText(files.length + " Datei"
-					+ (files.length == 1 ? "" : "en") + " geöffnet.");
+			lblInformation.setText(files.length + " file"
+					+ (files.length == 1 ? "" : "s") + " opened.");
 			DefaultMutableTreeNode root = new DefaultMutableTreeNode(files[0]
 					.getParentFile().getAbsolutePath());
 			treeModel = new DefaultTreeModel(root);
@@ -443,8 +443,8 @@ public class MainWindow extends JFrame {
 			JOptionPane
 					.showMessageDialog(
 							null,
-							"Es muss mindestens eine Textdatei ausgewählt werden, um fortzufahren.",
-							"Achtung", JOptionPane.INFORMATION_MESSAGE);
+							"Please choose at least one readable file to continue..",
+							"Caution", JOptionPane.INFORMATION_MESSAGE);
 			return false;
 		}
 	}
@@ -452,11 +452,11 @@ public class MainWindow extends JFrame {
 	private void openFiles() throws IOException, BadLocationException {
 		textArea.setText("");
 		List<String> lines;
-		textArea.append("Angewandte Filterregeln:" + System.lineSeparator());
+		textArea.append("Filter Rules applied:" + System.lineSeparator());
 		for (int z = 0; z < rules.size(); z++) {
 			textArea.append(rules.get(z).toString() + System.lineSeparator());
 		}
-		textArea.append(System.lineSeparator() + "Ergebnis der Filterung: "
+		textArea.append(System.lineSeparator() + "Filtering result: "
 				+ System.lineSeparator() + System.lineSeparator());
 		for (int i = 0; i < selectedFiles.size(); i++) {
 			for (int k = 0; k < rules.size(); k++) {
