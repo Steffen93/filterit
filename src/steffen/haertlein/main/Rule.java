@@ -1,6 +1,10 @@
 package steffen.haertlein.main;
 
 public class Rule {
+	/**
+	 * @author Steffen Haertlein
+	 * */
+	
 	private String text;
 	private int before, after;
 	public Rule(String _text, int _before, int _after){

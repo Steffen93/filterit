@@ -40,7 +40,7 @@ import javax.swing.tree.DefaultTreeModel;
 public class MainWindow extends JFrame {
 
 	/**
-	 * 
+	 * @author Steffen Haertlein
 	 */
 	private static final long serialVersionUID = 1L;
 	private Vector<FileObject> selectedFiles = new Vector<FileObject>();

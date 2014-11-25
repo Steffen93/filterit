@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FileObject {
+	/**
+	 * @author Steffen Haertlein
+	 * */
 	private File f;
 	private List<String> lines = new ArrayList<String>();
 	private List<Boolean> lineVisible = new ArrayList<Boolean>();
