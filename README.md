@@ -5,10 +5,12 @@ Filter files the way you need.
 
 Supported file types to read:
 -----------------------------
+- each file is opened and read byte after byte
+
+Coming soon:
 - .docx
 - .xlsx
 - .pdf
-- every other file is opened and read byte after byte
 
 How to use:
 -----------
