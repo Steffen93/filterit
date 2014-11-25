@@ -37,6 +37,9 @@ import javax.swing.text.Highlighter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
+import steffen.haertlein.file.FileObject;
+import steffen.haertlein.file.Rule;
+
 public class MainWindow extends JFrame {
 
 	/**
@@ -94,24 +97,23 @@ public class MainWindow extends JFrame {
 		JPanel southPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		outputPanel.add(southPanel, BorderLayout.SOUTH);
 
-		JButton btnAdaptFilter = new JButton("Adapt Filters");
+		JButton btnAdaptFilter = new JButton("Back");
 		btnAdaptFilter.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex() - 1);
+				changeToPreviousPage();
 			}
 		});
 
 		JButton btnChooseFiles = new JButton("Choose Files");
 		btnChooseFiles.addActionListener(new ActionListener() {
-
+                      
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				tabbedPane.setSelectedIndex(0);
 			}
 		});
-		southPanel.add(btnChooseFiles);
 		southPanel.add(btnAdaptFilter);
 
 		JButton btnSave = new JButton("Save...");
@@ -244,8 +246,7 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				tabbedPane.setSelectedIndex((tabbedPane.getSelectedIndex() - 1)
-						% tabbedPane.getTabCount());
+				changeToPreviousPage();
 			}
 		});
 		southPanel.add(btnBack);
@@ -313,8 +314,7 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				tabbedPane.setSelectedIndex((tabbedPane.getSelectedIndex() + 1)
-						% tabbedPane.getTabCount());
+				changeToNextPage();
 			}
 		});
 	}
@@ -353,8 +353,7 @@ public class MainWindow extends JFrame {
 
 	protected void applyFilters() throws IOException, BadLocationException {
 		openFiles();
-		tabbedPane.setSelectedIndex((tabbedPane.getSelectedIndex() + 1)
-				% tabbedPane.getTabCount());
+		changeToNextPage();
 	}
 
 	protected void addRule() {
@@ -475,6 +474,18 @@ public class MainWindow extends JFrame {
 		addHighlights();
 	}
 
+	private void changeToNextPage(){
+		if (tabbedPane.getSelectedIndex() < (tabbedPane.getTabCount() - 1)){
+			tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex()+1);
+		}
+	}
+	
+	private void changeToPreviousPage(){
+		if(tabbedPane.getSelectedIndex() > 0){
+			tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex()-1);
+		}			
+	}
+	
 	private void addHighlights() throws BadLocationException {
 		String textToParse = textArea.getText();
 		int index = 0;

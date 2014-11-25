@@ -1,4 +1,4 @@
-package steffen.haertlein.main;
+package steffen.haertlein.file;
 
 public class Rule {
 	/**
