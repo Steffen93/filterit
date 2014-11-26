@@ -3,7 +3,7 @@ FindIT
 
 Filter files the way you need.
 
-Supported file types to read:
+Supported file types:
 -----------------------------
 - .docx
 - .xlsx
