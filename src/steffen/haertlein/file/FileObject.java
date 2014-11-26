@@ -24,7 +24,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 
-import steffen.haertlein.main.Rule;
+import steffen.haertlein.file.Rule;
 
 public class FileObject {
 	private File f;
