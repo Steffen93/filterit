@@ -123,7 +123,7 @@ public class FileObject {
 			XWPFWordExtractor docxReader = new XWPFWordExtractor(document);
 			String text = docxReader.getText();
 			docxReader.close();
-			String[] docxLines = text.split(System.lineSeparator());
+			String[] docxLines = text.split("\n");
 			for (String line : docxLines) {
 				lines.add(line);
 			}
