@@ -21,5 +21,5 @@ How to use:
 
 Build jar from the code:
 ------------------------
-1. Run `mvn clean install` from the command line in the root folder (where the pom.xml file is located)
+1. Run `mvn install` from the command line in the root folder (where the pom.xml file is located)
 2. The jar file is located at `target/FindIT-<VERSION>-jar-with-dependencies.jar`
