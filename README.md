@@ -12,7 +12,7 @@ Supported file types:
 
 How to use:
 -----------
-1. Download <a href="https://github.com/Steffen93/findit/releases">the latest version of FindIT</a> and launch the software
+1. Download <a href="https://github.com/Steffen93/filterit/releases">the latest version of FilterIT</a> and launch the software
 2. Choose all the files you want to filter and press "Continue"
 3. Enter filter rules (and if you need it, how many files before and after a hit should be printed) and apply them
 4. "Continue" to view the results; places where rules apply are highlighted
@@ -22,4 +22,4 @@ How to use:
 Build jar from the code:
 ------------------------
 1. Run `mvn install` from the command line in the root folder (where the pom.xml file is located)
-2. The jar file is located at `target/FindIT-<VERSION>-jar-with-dependencies.jar`
+2. The jar file is located at `target/FilterIT-<VERSION>-jar-with-dependencies.jar`
