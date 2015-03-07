@@ -68,8 +68,7 @@ public class FileObject {
 			resetLineVisibility();
 			return true;
 		} catch (IOException e) {
-			JOptionPane.showMessageDialog(null, "Konnte Datei nicht öffnen",
-					"Fehler", JOptionPane.ERROR_MESSAGE);
+			System.err.println("File could not be read.");
 			return false;
 		}
 	}

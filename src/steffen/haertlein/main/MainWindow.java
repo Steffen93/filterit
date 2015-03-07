@@ -2,7 +2,7 @@ package steffen.haertlein.main;
 
 /*
  *
- *   Copyright 2014 Steffen Haertlein
+ *   Copyright 2015 Steffen Haertlein
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.awt.event.FocusListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
@@ -78,7 +79,7 @@ public class MainWindow extends JFrame {
 	private JTabbedPane tabbedPane;
 	private Highlighter hiLighter;
 	private Highlighter.HighlightPainter coloredPainter = new DefaultHighlighter.DefaultHighlightPainter(
-			Color.RED);
+			Color.LIGHT_GRAY);
 	private JButton btnContinue;
 	private JTextField txtLinesBefore;
 	private JTextField txtLinesAfter;
@@ -104,7 +105,6 @@ public class MainWindow extends JFrame {
 	private void initOutputPanel() {
 		JPanel outputPanel = new JPanel();
 		tabbedPane.addTab("Output", outputPanel);
-		tabbedPane.setEnabledAt(2, false);
 		outputPanel.setLayout(new BorderLayout(0, 0));
 		textArea = new JTextArea();
 		textArea.setEditable(false);
@@ -295,20 +295,17 @@ public class MainWindow extends JFrame {
 		JPanel northPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		filesPanel.add(northPanel, BorderLayout.NORTH);
 
-		JButton btnChooseFiles = new JButton("Choose Files...");
-		btnChooseFiles.addActionListener(new ActionListener() {
+		JButton btnAddFiles = new JButton("Add...");
+		btnAddFiles.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				try {
-					if (chooseFiles()) {
-						tabbedPane.setEnabledAt(1, true);
-						btnContinue.setEnabled(true);
-					}
+					addFiles();
 				} catch (IOException | BadLocationException e) {
 					e.printStackTrace();
 				}
 			}
 		});
-		northPanel.add(btnChooseFiles);
+		northPanel.add(btnAddFiles);
 
 		JPanel southPanel = new JPanel(new BorderLayout(0, 0));
 		filesPanel.add(southPanel, BorderLayout.SOUTH);
@@ -324,7 +321,6 @@ public class MainWindow extends JFrame {
 
 		btnContinue = new JButton("Continue");
 		eastPanel.add(btnContinue);
-		btnContinue.setEnabled(false);
 		btnContinue.addActionListener(new ActionListener() {
 
 			@Override
@@ -404,15 +400,35 @@ public class MainWindow extends JFrame {
 		setTableData();
 	}
 
-	protected boolean chooseFiles() throws IOException, BadLocationException {
+	protected boolean addFiles() throws IOException, BadLocationException {
 		JFileChooser fileChooser = new JFileChooser(currentPath);
 		fileChooser.setMultiSelectionEnabled(true);
+		fileChooser.setApproveButtonText("Add");
 		if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
 			selectedFiles.clear();
 			File[] files = fileChooser.getSelectedFiles();
+			if (files.length <= 0) {
+				JOptionPane
+				.showMessageDialog(
+						null,
+						"Please choose at least one readable file to continue.",
+						"Caution", JOptionPane.INFORMATION_MESSAGE);
+				return false;
+			}
+			HashMap<String, File[]> allFolders = new HashMap<String, File[]>();
+			allFolders.put(files[0].getParent(), files); //Key: folder name, Value: all files inside
+			for(File f : files){
+				if(f.isDirectory()){
+					allFolders.put(f.getAbsolutePath(), f.listFiles()); //TODO: recursive
+				}
+			}
+			//TODO: use map
 			FileObject currFile;
 			int invalidFileCount = 0;
 			for (int i = 0; i < files.length; i++) {
+				if (!files[i].isFile()){
+					continue;
+				}
 				currFile = new FileObject(files[i]);
 				if (currFile.init()) {
 					selectedFiles.add(currFile);
@@ -430,14 +446,6 @@ public class MainWindow extends JFrame {
 				files[i] = selectedFiles.get(i).getFile();
 			}
 			currentPath = fileChooser.getCurrentDirectory();
-			if (files.length == 0) {
-				JOptionPane
-						.showMessageDialog(
-								null,
-								"Please choose at least one readable file to continue.",
-								"Caution", JOptionPane.INFORMATION_MESSAGE);
-				return false;
-			}
 			lblInformation.setText(files.length + " file"
 					+ (files.length == 1 ? "" : "s") + " opened.");
 			DefaultMutableTreeNode root = new DefaultMutableTreeNode(files[0]
@@ -516,7 +524,6 @@ public class MainWindow extends JFrame {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (ClassNotFoundException | InstantiationException
 				| IllegalAccessException | UnsupportedLookAndFeelException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		MainWindow m = new MainWindow();
