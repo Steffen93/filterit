@@ -1,4 +1,4 @@
-FindIT
+FilterIT
 ======
 
 Filter files the way you need.
