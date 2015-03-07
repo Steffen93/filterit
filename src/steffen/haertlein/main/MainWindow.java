@@ -1,22 +1,22 @@
 package steffen.haertlein.main;
 
 /*
-*
-*   Copyright 2014 Steffen Haertlein
-*
-*   Licensed under the Apache License, Version 2.0 (the "License");
-*   you may not use this file except in compliance with the License.
-*   You may obtain a copy of the License at
-*
-*       http://www.apache.org/licenses/LICENSE-2.0
-*
-*   Unless required by applicable law or agreed to in writing, software
-*   distributed under the License is distributed on an "AS IS" BASIS,
-*   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*   See the License for the specific language governing permissions and
-*   limitations under the License.
-*
-*/
+ *
+ *   Copyright 2014 Steffen Haertlein
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -47,7 +47,7 @@ import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
@@ -87,7 +87,7 @@ public class MainWindow extends JFrame {
 
 	public MainWindow() {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setTitle("FindIT");
+		setTitle("FilterIT");
 		initGUI();
 		pack();
 		setMinimumSize(getSize());
@@ -126,7 +126,7 @@ public class MainWindow extends JFrame {
 
 		JButton btnChooseFiles = new JButton("Choose Files");
 		btnChooseFiles.addActionListener(new ActionListener() {
-                      
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				tabbedPane.setSelectedIndex(0);
@@ -244,18 +244,15 @@ public class MainWindow extends JFrame {
 		centerSouthPanel.add(btnDelAllRules);
 		btnDelAllRules.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				if (JOptionPane.YES_OPTION == JOptionPane
-						.showConfirmDialog(
-								null,
-								"Do you really want to delete all rules?",
-								"Delete All Rules?",
-								JOptionPane.YES_NO_CANCEL_OPTION,
-								JOptionPane.WARNING_MESSAGE)) {
+				if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(
+						null, "Do you really want to delete all rules?",
+						"Delete All Rules?", JOptionPane.YES_NO_CANCEL_OPTION,
+						JOptionPane.WARNING_MESSAGE)) {
 					delAllRules();
 				}
 			}
 		});
-		
+
 		JPanel southPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		filterRulesPanel.add(southPanel, BorderLayout.SOUTH);
 
@@ -357,14 +354,12 @@ public class MainWindow extends JFrame {
 								JOptionPane.YES_NO_CANCEL_OPTION) == JOptionPane.YES_OPTION) {
 					Files.write(saver.getSelectedFile().toPath(), textArea
 							.getText().getBytes());
-					JOptionPane.showMessageDialog(this,
-							"Save successful.", "File saved",
-							JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(this, "Save successful.",
+							"File saved", JOptionPane.INFORMATION_MESSAGE);
 				}
 			} catch (IOException e) {
-				JOptionPane.showMessageDialog(this,
-						"Error saving file.", "Error",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, "Error saving file.",
+						"Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
@@ -457,11 +452,9 @@ public class MainWindow extends JFrame {
 			textArea.setText("");
 			return true;
 		} else {
-			JOptionPane
-					.showMessageDialog(
-							null,
-							"Please choose at least one readable file to continue..",
-							"Caution", JOptionPane.INFORMATION_MESSAGE);
+			JOptionPane.showMessageDialog(null,
+					"Please choose at least one readable file to continue..",
+					"Caution", JOptionPane.INFORMATION_MESSAGE);
 			return false;
 		}
 	}
@@ -492,18 +485,18 @@ public class MainWindow extends JFrame {
 		addHighlights();
 	}
 
-	private void changeToNextPage(){
-		if (tabbedPane.getSelectedIndex() < (tabbedPane.getTabCount() - 1)){
-			tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex()+1);
+	private void changeToNextPage() {
+		if (tabbedPane.getSelectedIndex() < (tabbedPane.getTabCount() - 1)) {
+			tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex() + 1);
 		}
 	}
-	
-	private void changeToPreviousPage(){
-		if(tabbedPane.getSelectedIndex() > 0){
-			tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex()-1);
-		}			
+
+	private void changeToPreviousPage() {
+		if (tabbedPane.getSelectedIndex() > 0) {
+			tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex() - 1);
+		}
 	}
-	
+
 	private void addHighlights() throws BadLocationException {
 		String textToParse = textArea.getText();
 		int index = 0;
@@ -520,13 +513,11 @@ public class MainWindow extends JFrame {
 
 	public static void main(String[] args) {
 		try {
-			for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-				if ("Nimbus".equals(info.getName())) {
-					UIManager.setLookAndFeel(info.getClassName());
-					break;
-				}
-			}
-		} catch (Exception e) {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (ClassNotFoundException | InstantiationException
+				| IllegalAccessException | UnsupportedLookAndFeelException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		MainWindow m = new MainWindow();
 		m.setVisible(true);
