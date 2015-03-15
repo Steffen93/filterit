@@ -1,22 +1,22 @@
 package steffen.haertlein.file;
 
 /*
-*
-*   Copyright 2014 Steffen Haertlein
-*
-*   Licensed under the Apache License, Version 2.0 (the "License");
-*   you may not use this file except in compliance with the License.
-*   You may obtain a copy of the License at
-*
-*       http://www.apache.org/licenses/LICENSE-2.0
-*
-*   Unless required by applicable law or agreed to in writing, software
-*   distributed under the License is distributed on an "AS IS" BASIS,
-*   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*   See the License for the specific language governing permissions and
-*   limitations under the License.
-*
-*/
+ *
+ *   Copyright 2014 Steffen Haertlein
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,8 +41,6 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
-
-import steffen.haertlein.file.Rule;
 
 public class FileObject {
 	private File f;
@@ -121,6 +119,7 @@ public class FileObject {
 				}
 			}
 			fs.close();
+			wb.close();
 			String[] xlsxLines = text.split(System.lineSeparator());
 			for (String line : xlsxLines) {
 				lines.add(line);
@@ -146,19 +145,16 @@ public class FileObject {
 			}
 			fs.close();
 		} catch (InvalidFormatException e) {
-			// TODO Auto-generated catch block
 			JOptionPane.showMessageDialog(null,
 					"InvalidFormatException in readWordDocument", "Fehler",
 					JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			JOptionPane.showMessageDialog(null,
 					"FileNotFoundException in readWordDocument", "Fehler",
 					JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			JOptionPane.showMessageDialog(null,
 					"IOException in readWordDocument", "Fehler",
 					JOptionPane.ERROR_MESSAGE);

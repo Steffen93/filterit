@@ -29,7 +29,6 @@ import java.awt.event.FocusListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
@@ -403,30 +402,18 @@ public class MainWindow extends JFrame {
 	protected boolean addFiles() throws IOException, BadLocationException {
 		JFileChooser fileChooser = new JFileChooser(currentPath);
 		fileChooser.setMultiSelectionEnabled(true);
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		fileChooser.setApproveButtonText("Add");
 		if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
 			selectedFiles.clear();
 			File[] files = fileChooser.getSelectedFiles();
 			if (files.length <= 0) {
-				JOptionPane
-				.showMessageDialog(
-						null,
-						"Please choose at least one readable file to continue.",
-						"Caution", JOptionPane.INFORMATION_MESSAGE);
 				return false;
 			}
-			HashMap<String, File[]> allFolders = new HashMap<String, File[]>();
-			allFolders.put(files[0].getParent(), files); //Key: folder name, Value: all files inside
-			for(File f : files){
-				if(f.isDirectory()){
-					allFolders.put(f.getAbsolutePath(), f.listFiles()); //TODO: recursive
-				}
-			}
-			//TODO: use map
-			FileObject currFile;
+			/*FileObject currFile;
 			int invalidFileCount = 0;
 			for (int i = 0; i < files.length; i++) {
-				if (!files[i].isFile()){
+				if (!files[i].isFile()) {
 					continue;
 				}
 				currFile = new FileObject(files[i]);
@@ -445,18 +432,15 @@ public class MainWindow extends JFrame {
 			for (int i = 0; i < selectedFiles.size(); i++) {
 				files[i] = selectedFiles.get(i).getFile();
 			}
-			currentPath = fileChooser.getCurrentDirectory();
-			lblInformation.setText(files.length + " file"
-					+ (files.length == 1 ? "" : "s") + " opened.");
-			DefaultMutableTreeNode root = new DefaultMutableTreeNode(files[0]
-					.getParentFile().getAbsolutePath());
-			treeModel = new DefaultTreeModel(root);
-			for (int i = 0; i < files.length; i++) {
-				treeModel.insertNodeInto(
-						new DefaultMutableTreeNode(files[i].getName()), root,
-						root.getChildCount());
+			currentPath = fileChooser.getCurrentDirectory();*/
+			lblInformation.setText("Adding files...");
+			DefaultMutableTreeNode root = new DefaultMutableTreeNode(files[0].getParent());
+			if (treeModel == null){
+				treeModel = new DefaultTreeModel(root);
 			}
+			addFilesToTreeModel(root, files, true); // TODO: manage recursivity
 			tree.setModel(treeModel);
+			lblInformation.setText("Files added");
 			textArea.setText("");
 			return true;
 		} else {
@@ -464,6 +448,21 @@ public class MainWindow extends JFrame {
 					"Please choose at least one readable file to continue..",
 					"Caution", JOptionPane.INFORMATION_MESSAGE);
 			return false;
+		}
+	}
+
+	private void addFilesToTreeModel(DefaultMutableTreeNode root, File[] files, boolean recursive) {
+		for (File f : files) {
+			if (f.isFile()) {
+				DefaultMutableTreeNode child = new DefaultMutableTreeNode(f.getName(),false);
+				treeModel.insertNodeInto(child, root,
+						root.getChildCount());
+			} else if (f.isDirectory() && recursive) {
+				DefaultMutableTreeNode folder = new DefaultMutableTreeNode(f.getName());
+				treeModel.insertNodeInto(folder, root, root.getChildCount());
+				addFilesToTreeModel(folder,
+						f.listFiles(), recursive);
+			}
 		}
 	}
 
@@ -529,5 +528,4 @@ public class MainWindow extends JFrame {
 		MainWindow m = new MainWindow();
 		m.setVisible(true);
 	}
-
 }
