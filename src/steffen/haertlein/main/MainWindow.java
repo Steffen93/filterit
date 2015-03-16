@@ -47,13 +47,13 @@ import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
 import steffen.haertlein.file.FileObject;
@@ -67,7 +67,6 @@ public class MainWindow extends JFrame {
 	private static final long serialVersionUID = 1L;
 	private Vector<FileObject> selectedFiles = new Vector<FileObject>();
 	private JTree tree;
-	private DefaultTreeModel treeModel;
 	private File currentPath;
 	private JTextArea textArea;
 	private JTextField ruleTextField;
@@ -286,7 +285,9 @@ public class MainWindow extends JFrame {
 		JPanel filesPanel = new JPanel(new BorderLayout(0, 0));
 		tabbedPane.addTab("Files", filesPanel);
 		tree = new JTree();
-		tree.setModel(treeModel);
+		FileTreeNode root = new FileTreeNode("Files");
+		tree.setModel(new DefaultTreeModel(root));
+		tree.setRootVisible(true);
 
 		JScrollPane treePane = new JScrollPane(tree);
 		filesPanel.add(treePane, BorderLayout.CENTER);
@@ -425,57 +426,44 @@ public class MainWindow extends JFrame {
 			 * fileChooser.getCurrentDirectory();
 			 */
 			lblInformation.setText("Adding files...");
-			if (treeModel == null) {
-				DefaultMutableTreeNode root = new DefaultMutableTreeNode(
-						"Files");
-				treeModel = new DefaultTreeModel(root);
-			}
-			addFilesToTreeModel((DefaultMutableTreeNode) treeModel.getRoot(),
+			addFilesToTreeModel((FileTreeNode) tree.getModel().getRoot(),
 					files, true); // TODO: manage recursivity
-			tree.setModel(treeModel);
 			lblInformation.setText("Files added");
+			if (!tree.isExpanded(0)) {
+				tree.expandRow(0);
+			}
 			textArea.setText("");
 			return true;
-		} else {
-			JOptionPane.showMessageDialog(null,
-					"Please choose at least one readable file to continue..",
-					"Caution", JOptionPane.INFORMATION_MESSAGE);
-			return false;
 		}
-	}
-
-	private void addFilesToTreeModel(DefaultMutableTreeNode root, File[] files,
-			boolean recursive) {
-		for (File f : files) {
-			if (f.isFile()) {
-				DefaultMutableTreeNode child = new DefaultMutableTreeNode(
-						f.getName(), false);
-				child.setUserObject(f);
-				treeModel.insertNodeInto(child, root, root.getChildCount());
-			} else if (f.isDirectory() && recursive) {
-				DefaultMutableTreeNode folder = new DefaultMutableTreeNode(
-						f.getName());
-				folder.setUserObject(f);
-				if (folderExistsInTree(f)) {
-					treeModel
-							.insertNodeInto(folder, root, root.getChildCount());
-					addFilesToTreeModel(folder, f.listFiles(), recursive);
-				}
-			}
-		}
-	}
-
-	private boolean folderExistsInTree(File f) {
-		//TODO
 		return false;
 	}
 
-	public DefaultMutableTreeNode searchNode(String nodeStr) {
-		DefaultMutableTreeNode node = null;
-		Enumeration e = ((DefaultMutableTreeNode)treeModel.getRoot()).breadthFirstEnumeration();
+	private void addFilesToTreeModel(FileTreeNode root, File[] files,
+			boolean recursive) {
+		DefaultTreeModel treeModel = (DefaultTreeModel) tree.getModel();
+		for (File f : files) {
+			if (f.isFile()) {
+				FileTreeNode child = new FileTreeNode(f, false);
+				treeModel.insertNodeInto(child, root, root.getChildCount());
+			} else if (f.isDirectory() && recursive) {
+				FileTreeNode folder = searchNodeByFileName(f.getName());
+				if (folder == null) {
+					folder = new FileTreeNode(f);
+					treeModel
+							.insertNodeInto(folder, root, root.getChildCount());
+				}
+				addFilesToTreeModel(folder, f.listFiles(), recursive);
+			}
+		}
+	}
+
+	public FileTreeNode searchNodeByFileName(String nodeStr) {
+		FileTreeNode node = null;
+		Enumeration<?> e = ((FileTreeNode) tree.getModel().getRoot())
+				.breadthFirstEnumeration();
 		while (e.hasMoreElements()) {
-			node = (DefaultMutableTreeNode) e.nextElement();
-			if (nodeStr.equals(((File)node.getUserObject()).getName())) {
+			node = (FileTreeNode) e.nextElement();
+			if (nodeStr.equals(node.getUserObject())) {
 				return node;
 			}
 		}
