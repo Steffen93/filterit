@@ -29,6 +29,7 @@ import java.awt.event.FocusListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
 
@@ -410,35 +411,27 @@ public class MainWindow extends JFrame {
 			if (files.length <= 0) {
 				return false;
 			}
-			/*FileObject currFile;
-			int invalidFileCount = 0;
-			for (int i = 0; i < files.length; i++) {
-				if (!files[i].isFile()) {
-					continue;
-				}
-				currFile = new FileObject(files[i]);
-				if (currFile.init()) {
-					selectedFiles.add(currFile);
-				} else {
-					invalidFileCount++;
-				}
-			}
-			if (invalidFileCount > 0) {
-				JOptionPane.showMessageDialog(null, invalidFileCount
-						+ " files could not be read.", "Error",
-						JOptionPane.ERROR_MESSAGE);
-			}
-			files = new File[selectedFiles.size()];
-			for (int i = 0; i < selectedFiles.size(); i++) {
-				files[i] = selectedFiles.get(i).getFile();
-			}
-			currentPath = fileChooser.getCurrentDirectory();*/
+			/*
+			 * FileObject currFile; int invalidFileCount = 0; for (int i = 0; i
+			 * < files.length; i++) { if (!files[i].isFile()) { continue; }
+			 * currFile = new FileObject(files[i]); if (currFile.init()) {
+			 * selectedFiles.add(currFile); } else { invalidFileCount++; } } if
+			 * (invalidFileCount > 0) { JOptionPane.showMessageDialog(null,
+			 * invalidFileCount + " files could not be read.", "Error",
+			 * JOptionPane.ERROR_MESSAGE); } files = new
+			 * File[selectedFiles.size()]; for (int i = 0; i <
+			 * selectedFiles.size(); i++) { files[i] =
+			 * selectedFiles.get(i).getFile(); } currentPath =
+			 * fileChooser.getCurrentDirectory();
+			 */
 			lblInformation.setText("Adding files...");
-			DefaultMutableTreeNode root = new DefaultMutableTreeNode(files[0].getParent());
-			if (treeModel == null){
+			if (treeModel == null) {
+				DefaultMutableTreeNode root = new DefaultMutableTreeNode(
+						"Files");
 				treeModel = new DefaultTreeModel(root);
 			}
-			addFilesToTreeModel(root, files, true); // TODO: manage recursivity
+			addFilesToTreeModel((DefaultMutableTreeNode) treeModel.getRoot(),
+					files, true); // TODO: manage recursivity
 			tree.setModel(treeModel);
 			lblInformation.setText("Files added");
 			textArea.setText("");
@@ -451,19 +444,42 @@ public class MainWindow extends JFrame {
 		}
 	}
 
-	private void addFilesToTreeModel(DefaultMutableTreeNode root, File[] files, boolean recursive) {
+	private void addFilesToTreeModel(DefaultMutableTreeNode root, File[] files,
+			boolean recursive) {
 		for (File f : files) {
 			if (f.isFile()) {
-				DefaultMutableTreeNode child = new DefaultMutableTreeNode(f.getName(),false);
-				treeModel.insertNodeInto(child, root,
-						root.getChildCount());
+				DefaultMutableTreeNode child = new DefaultMutableTreeNode(
+						f.getName(), false);
+				child.setUserObject(f);
+				treeModel.insertNodeInto(child, root, root.getChildCount());
 			} else if (f.isDirectory() && recursive) {
-				DefaultMutableTreeNode folder = new DefaultMutableTreeNode(f.getName());
-				treeModel.insertNodeInto(folder, root, root.getChildCount());
-				addFilesToTreeModel(folder,
-						f.listFiles(), recursive);
+				DefaultMutableTreeNode folder = new DefaultMutableTreeNode(
+						f.getName());
+				folder.setUserObject(f);
+				if (folderExistsInTree(f)) {
+					treeModel
+							.insertNodeInto(folder, root, root.getChildCount());
+					addFilesToTreeModel(folder, f.listFiles(), recursive);
+				}
 			}
 		}
+	}
+
+	private boolean folderExistsInTree(File f) {
+		//TODO
+		return false;
+	}
+
+	public DefaultMutableTreeNode searchNode(String nodeStr) {
+		DefaultMutableTreeNode node = null;
+		Enumeration e = ((DefaultMutableTreeNode)treeModel.getRoot()).breadthFirstEnumeration();
+		while (e.hasMoreElements()) {
+			node = (DefaultMutableTreeNode) e.nextElement();
+			if (nodeStr.equals(((File)node.getUserObject()).getName())) {
+				return node;
+			}
+		}
+		return null;
 	}
 
 	private void openFiles() throws IOException, BadLocationException {
