@@ -4,6 +4,8 @@ import java.io.File;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import steffen.haertlein.file.FileObject;
+
 public class FileTreeNode extends DefaultMutableTreeNode {
 	private static final long serialVersionUID = 1L;
 
@@ -25,7 +27,10 @@ public class FileTreeNode extends DefaultMutableTreeNode {
 		if (userObject instanceof File){
 			return ((File)userObject).getName();
 		}
-		else{
+		else if (userObject instanceof FileObject) {
+				return ((FileObject)userObject).getFile().getName();
+		}
+		else {
 			return super.toString();
 		}
 	}

@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -88,6 +89,7 @@ public class MainWindow extends JFrame {
 	private JTextField txtLinesAfter;
 	private JLabel lblInformation;
 	private JPanel mainPanel;
+	private JCheckBox chkbxRecursive;
 
 	public MainWindow() {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -319,12 +321,18 @@ public class MainWindow extends JFrame {
 			}
 		});
 		northPanel.add(btnAddFiles);
+		
+		chkbxRecursive = new JCheckBox("Recursive");
+		chkbxRecursive.setSelected(true);
+		northPanel.add(chkbxRecursive);
 
 		btnRemove = new JButton(
 				"<html><font color=red size=+1><b>X</b></font></html>");
 		btnRemove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				lblInformation.setText("Removing selection...");
 				removeSelected();
+				lblInformation.setText("Selection removed.");
 			}
 		});
 		btnRemove.setEnabled(false);
@@ -336,7 +344,7 @@ public class MainWindow extends JFrame {
 		JPanel westPanel = new JPanel();
 		southPanel.add(westPanel, BorderLayout.WEST);
 
-		lblInformation = new JLabel("");
+		lblInformation = new JLabel(""); //TODO: replace by loading bar in a new thread
 		westPanel.add(lblInformation);
 
 		JPanel eastPanel = new JPanel();
@@ -464,6 +472,7 @@ public class MainWindow extends JFrame {
 	}
 
 	protected boolean addFiles() throws IOException, BadLocationException {
+		lblInformation.setText("Adding files...");
 		JFileChooser fileChooser = new JFileChooser(currentPath);
 		fileChooser.setMultiSelectionEnabled(true);
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -487,14 +496,13 @@ public class MainWindow extends JFrame {
 			 * selectedFiles.get(i).getFile(); } currentPath =
 			 * fileChooser.getCurrentDirectory();
 			 */
-			lblInformation.setText("Adding files...");
 			addFilesToTreeModel((FileTreeNode) tree.getModel().getRoot(),
-					files, true); // TODO: manage if recursive or not
-			lblInformation.setText("Files added");
+					files, chkbxRecursive.isSelected()); // TODO: manage if recursive or not
 			if (!tree.isExpanded(0)) {
 				tree.expandRow(0);
 			}
 			textArea.setText("");
+			lblInformation.setText("Files added");
 			return true;
 		}
 		return false;
@@ -505,7 +513,7 @@ public class MainWindow extends JFrame {
 		DefaultTreeModel treeModel = (DefaultTreeModel) tree.getModel();
 		for (File f : files) {
 			if (f.isFile()) {
-				FileTreeNode child = new FileTreeNode(f);
+				FileTreeNode child = new FileTreeNode(new FileObject(f), false);
 				treeModel.insertNodeInto(child, root, root.getChildCount());
 			} else if (f.isDirectory() && recursive) {
 				FileTreeNode folder = searchNodeByFileName(f.getName());
