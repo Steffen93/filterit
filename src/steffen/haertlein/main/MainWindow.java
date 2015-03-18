@@ -47,14 +47,17 @@ import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
-import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 
 import steffen.haertlein.file.FileObject;
 import steffen.haertlein.file.Rule;
@@ -80,6 +83,7 @@ public class MainWindow extends JFrame {
 	private Highlighter.HighlightPainter coloredPainter = new DefaultHighlighter.DefaultHighlightPainter(
 			Color.LIGHT_GRAY);
 	private JButton btnContinue;
+	private JButton btnRemove;
 	private JTextField txtLinesBefore;
 	private JTextField txtLinesAfter;
 	private JLabel lblInformation;
@@ -288,6 +292,13 @@ public class MainWindow extends JFrame {
 		FileTreeNode root = new FileTreeNode("Files");
 		tree.setModel(new DefaultTreeModel(root));
 		tree.setRootVisible(true);
+		tree.addTreeSelectionListener(new TreeSelectionListener() {
+
+			@Override
+			public void valueChanged(TreeSelectionEvent e) {
+				setRemoveButtonStatus(isTreeHavingNodesButRoot());
+			}
+		});
 
 		JScrollPane treePane = new JScrollPane(tree);
 		filesPanel.add(treePane, BorderLayout.CENTER);
@@ -296,7 +307,8 @@ public class MainWindow extends JFrame {
 		JPanel northPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		filesPanel.add(northPanel, BorderLayout.NORTH);
 
-		JButton btnAddFiles = new JButton("Add...");
+		JButton btnAddFiles = new JButton(
+				"<html><font color=blue size=+1><b>+</b></font></html>");
 		btnAddFiles.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				try {
@@ -307,6 +319,16 @@ public class MainWindow extends JFrame {
 			}
 		});
 		northPanel.add(btnAddFiles);
+
+		btnRemove = new JButton(
+				"<html><font color=red size=+1><b>X</b></font></html>");
+		btnRemove.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				removeSelected();
+			}
+		});
+		btnRemove.setEnabled(false);
+		northPanel.add(btnRemove);
 
 		JPanel southPanel = new JPanel(new BorderLayout(0, 0));
 		filesPanel.add(southPanel, BorderLayout.SOUTH);
@@ -331,11 +353,51 @@ public class MainWindow extends JFrame {
 		});
 	}
 
+	protected void removeSelected() {
+		TreePath currentSelection = tree.getSelectionPath();
+		if (currentSelection != null) {
+			DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) (currentSelection
+					.getLastPathComponent());
+			DefaultMutableTreeNode parent = (DefaultMutableTreeNode) (currentNode
+					.getParent());
+			while (currentNode != null) {
+				if (parent != null){
+					((DefaultTreeModel) tree.getModel())
+					.removeNodeFromParent(currentNode);
+				}
+				else{
+					currentSelection = tree.getSelectionPath();
+					if (currentSelection == null){
+						break;
+					}
+				}
+				currentNode = (DefaultMutableTreeNode) (currentSelection
+						.getLastPathComponent());
+				parent = (DefaultMutableTreeNode) (currentNode.getParent());
+			}
+			return;
+		}
+
+	}
+
+	protected void setRemoveButtonStatus(boolean newVal) {
+		btnRemove.setEnabled(newVal);
+	}
+
+	protected boolean isTreeHavingNodesButRoot() {
+		if (tree != null
+				&& ((DefaultMutableTreeNode) tree.getModel().getRoot())
+						.getChildCount() > 0 && tree.getSelectionPath() != null) {
+			return true;
+		}
+		return false;
+	}
+
 	private void initMainPanel() {
 		mainPanel = new JPanel();
 		getContentPane().add(mainPanel, BorderLayout.CENTER);
 		mainPanel.setLayout(new BorderLayout(0, 0));
-
+		// TODO: replace tabbedPane by normal pane
 		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		mainPanel.add(tabbedPane);
 	}
@@ -427,7 +489,7 @@ public class MainWindow extends JFrame {
 			 */
 			lblInformation.setText("Adding files...");
 			addFilesToTreeModel((FileTreeNode) tree.getModel().getRoot(),
-					files, true); // TODO: manage recursivity
+					files, true); // TODO: manage if recursive or not
 			lblInformation.setText("Files added");
 			if (!tree.isExpanded(0)) {
 				tree.expandRow(0);
@@ -443,7 +505,7 @@ public class MainWindow extends JFrame {
 		DefaultTreeModel treeModel = (DefaultTreeModel) tree.getModel();
 		for (File f : files) {
 			if (f.isFile()) {
-				FileTreeNode child = new FileTreeNode(f, false);
+				FileTreeNode child = new FileTreeNode(f);
 				treeModel.insertNodeInto(child, root, root.getChildCount());
 			} else if (f.isDirectory() && recursive) {
 				FileTreeNode folder = searchNodeByFileName(f.getName());
