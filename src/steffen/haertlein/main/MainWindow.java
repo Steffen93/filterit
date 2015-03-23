@@ -20,12 +20,15 @@ package steffen.haertlein.main;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,6 +43,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -48,6 +52,8 @@ import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.TreeSelectionEvent;
@@ -58,12 +64,13 @@ import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import steffen.haertlein.file.FileObject;
 import steffen.haertlein.file.Rule;
 
-public class MainWindow extends JFrame {
+public class MainWindow extends JFrame implements PropertyChangeListener {
 
 	/**
 	 * @author Steffen Haertlein
@@ -90,6 +97,8 @@ public class MainWindow extends JFrame {
 	private JLabel lblInformation;
 	private JPanel mainPanel;
 	private JCheckBox chkbxRecursive;
+	private JProgressBar progressBar;
+	protected ProgressBarTask task;
 
 	public MainWindow() {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -295,7 +304,6 @@ public class MainWindow extends JFrame {
 		tree.setModel(new DefaultTreeModel(root));
 		tree.setRootVisible(true);
 		tree.addTreeSelectionListener(new TreeSelectionListener() {
-
 			@Override
 			public void valueChanged(TreeSelectionEvent e) {
 				setRemoveButtonStatus(isTreeHavingNodesButRoot());
@@ -313,15 +321,39 @@ public class MainWindow extends JFrame {
 				"<html><font color=blue size=+1><b>+</b></font></html>");
 		btnAddFiles.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				try {
-					addFiles();
-				} catch (IOException | BadLocationException e) {
-					e.printStackTrace();
-				}
+				MainWindow.this.setCursor(Cursor
+						.getPredefinedCursor(Cursor.WAIT_CURSOR));
+				lblInformation.setText("Adding files...");
+				Runnable r = new Runnable() {
+					public void run() {
+						SwingUtilities.invokeLater(new Runnable() {
+							@Override
+							public void run() {
+								progressBar.setIndeterminate(true);
+							}
+						});
+						try {
+							addFiles();
+						} catch (IOException | BadLocationException e) {
+							e.printStackTrace();
+						}
+
+						SwingUtilities.invokeLater(new Runnable() {
+							public void run() {
+								progressBar.setIndeterminate(false);
+								lblInformation.setText("Files added");
+								MainWindow.this.setCursor(Cursor
+										.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+							}
+						});
+					}
+				};
+				Thread t = new Thread(r);
+				t.start();
 			}
 		});
 		northPanel.add(btnAddFiles);
-		
+
 		chkbxRecursive = new JCheckBox("Recursive");
 		chkbxRecursive.setSelected(true);
 		northPanel.add(chkbxRecursive);
@@ -344,9 +376,15 @@ public class MainWindow extends JFrame {
 		JPanel westPanel = new JPanel();
 		southPanel.add(westPanel, BorderLayout.WEST);
 
-		lblInformation = new JLabel(""); //TODO: replace by loading bar in a new thread
-		westPanel.add(lblInformation);
+		progressBar = new JProgressBar(0, 100);
+		progressBar.setStringPainted(true);
+		progressBar.setString("0");
+		westPanel.add(progressBar);
 
+		lblInformation = new JLabel(""); // TODO: replace by loading bar in a
+											// new thread
+		westPanel.add(lblInformation);
+		
 		JPanel eastPanel = new JPanel();
 		southPanel.add(eastPanel, BorderLayout.EAST);
 
@@ -369,13 +407,12 @@ public class MainWindow extends JFrame {
 			DefaultMutableTreeNode parent = (DefaultMutableTreeNode) (currentNode
 					.getParent());
 			while (currentNode != null) {
-				if (parent != null){
+				if (parent != null) {
 					((DefaultTreeModel) tree.getModel())
-					.removeNodeFromParent(currentNode);
-				}
-				else{
+							.removeNodeFromParent(currentNode);
+				} else {
 					currentSelection = tree.getSelectionPath();
-					if (currentSelection == null){
+					if (currentSelection == null) {
 						break;
 					}
 				}
@@ -411,16 +448,16 @@ public class MainWindow extends JFrame {
 	}
 
 	protected void saveFile() {
-		JFileChooser saver = new JFileChooser();
-		if (saver.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+		JFileChooser fileSaveDialog = new JFileChooser();
+		if (fileSaveDialog.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			try {
-				if (saver.getSelectedFile().exists()
+				if (fileSaveDialog.getSelectedFile().exists()
 						&& JOptionPane.showConfirmDialog(this,
 								"File already exists. Overwrite existing?",
 								"Confirm override",
 								JOptionPane.YES_NO_CANCEL_OPTION) == JOptionPane.YES_OPTION) {
-					Files.write(saver.getSelectedFile().toPath(), textArea
-							.getText().getBytes());
+					Files.write(fileSaveDialog.getSelectedFile().toPath(),
+							textArea.getText().getBytes());
 					JOptionPane.showMessageDialog(this, "Save successful.",
 							"File saved", JOptionPane.INFORMATION_MESSAGE);
 				}
@@ -472,7 +509,6 @@ public class MainWindow extends JFrame {
 	}
 
 	protected boolean addFiles() throws IOException, BadLocationException {
-		lblInformation.setText("Adding files...");
 		JFileChooser fileChooser = new JFileChooser(currentPath);
 		fileChooser.setMultiSelectionEnabled(true);
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -497,12 +533,11 @@ public class MainWindow extends JFrame {
 			 * fileChooser.getCurrentDirectory();
 			 */
 			addFilesToTreeModel((FileTreeNode) tree.getModel().getRoot(),
-					files, chkbxRecursive.isSelected()); // TODO: manage if recursive or not
+					files, chkbxRecursive.isSelected());
 			if (!tree.isExpanded(0)) {
 				tree.expandRow(0);
 			}
 			textArea.setText("");
-			lblInformation.setText("Files added");
 			return true;
 		}
 		return false;
@@ -599,7 +634,64 @@ public class MainWindow extends JFrame {
 				| IllegalAccessException | UnsupportedLookAndFeelException e) {
 			e.printStackTrace();
 		}
-		MainWindow m = new MainWindow();
-		m.setVisible(true);
+		javax.swing.SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				MainWindow m = new MainWindow();
+				m.setVisible(true);
+			}
+		});
+	}
+
+	class ProgressBarTask extends SwingWorker<Void, Void> {
+		private int max = Integer.MAX_VALUE;
+
+		public synchronized void setMax(int m) {
+			max = m;
+		}
+
+		public synchronized int getNumberOfNodes(TreeModel model) {
+			return getNumberOfNodes(model, model.getRoot());
+		}
+
+		private synchronized int getNumberOfNodes(TreeModel model, Object node) {
+			int count = 1;
+			int nChildren = model.getChildCount(node);
+			for (int i = 0; i < nChildren; i++) {
+				count += getNumberOfNodes(model, model.getChild(node, i));
+			}
+			return count;
+		}
+
+		@Override
+		protected Void doInBackground() throws Exception {
+			double progress = 0.0;
+			progressBar.setValue(0);
+			while (progress < 100) {
+				try {
+					Thread.sleep(200);
+				} catch (InterruptedException iex) {
+				}
+				progress = 100.0 * getNumberOfNodes(tree
+						.getModel()) / this.max;
+				// System.out.println("progress = " + progress);
+				progressBar.setValue(Math.min((int)(progress), 100));
+			}
+			return null;
+		}
+
+		@Override
+		protected void done() {
+			System.out.println("max: " + max);
+			// setProgress(0);
+		}
+	}
+
+	@Override
+	public void propertyChange(PropertyChangeEvent evt) {
+//		if ("progress" == evt.getPropertyName()) {
+//			int progress = (Integer) evt.getNewValue();
+//			progressBar.setValue(progress);
+//			System.out.println("Progress: " + progress);
+//		}
 	}
 }

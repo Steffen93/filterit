@@ -46,12 +46,18 @@ public class FileObject {
 	private File f;
 	private List<String> lines = new ArrayList<String>();
 	private List<Boolean> lineVisible = new ArrayList<Boolean>();
+	private boolean isInitialized = false;
 
 	public FileObject(File _f) {
 		f = _f;
+		this.isInitialized = false;
 	}
 
 	public boolean init() {
+		if(this.isInitialized){
+			return false;
+		}
+		this.isInitialized = true;
 		try {
 			if (getFileEnding().equals("docx")) {
 				readWordDocument();
