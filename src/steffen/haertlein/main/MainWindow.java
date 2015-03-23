@@ -99,6 +99,8 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 	private JCheckBox chkbxRecursive;
 	private JProgressBar progressBar;
 	protected ProgressBarTask task;
+	private int filesAdded;
+	private int step = 5;
 
 	public MainWindow() {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -321,29 +323,23 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 				"<html><font color=blue size=+1><b>+</b></font></html>");
 		btnAddFiles.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				MainWindow.this.setCursor(Cursor
-						.getPredefinedCursor(Cursor.WAIT_CURSOR));
-				lblInformation.setText("Adding files...");
+				longProcessStarting("Adding files...");
 				Runnable r = new Runnable() {
 					public void run() {
-						SwingUtilities.invokeLater(new Runnable() {
-							@Override
-							public void run() {
-								progressBar.setIndeterminate(true);
-							}
-						});
+//						SwingUtilities.invokeLater(new Runnable() {
+//							@Override
+//							public void run() {
+//							}
+//						});
 						try {
 							addFiles();
-						} catch (IOException | BadLocationException e) {
-							e.printStackTrace();
+						} catch (Exception e) {
+							longProcessFinished("Files added.");
 						}
 
 						SwingUtilities.invokeLater(new Runnable() {
 							public void run() {
-								progressBar.setIndeterminate(false);
-								lblInformation.setText("Files added");
-								MainWindow.this.setCursor(Cursor
-										.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+								longProcessFinished("Files added.");
 							}
 						});
 					}
@@ -362,9 +358,10 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 				"<html><font color=red size=+1><b>X</b></font></html>");
 		btnRemove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				lblInformation.setText("Removing selection...");
+				longProcessStarting("Removing Selection...");
 				removeSelected();
-				lblInformation.setText("Selection removed.");
+				showFileProgress();
+				longProcessFinished("Selection removed.");
 			}
 		});
 		btnRemove.setEnabled(false);
@@ -399,6 +396,22 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 		});
 	}
 
+	private void longProcessStarting (String informationText) {
+		MainWindow.this.setCursor(Cursor
+				.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		lblInformation.setText(informationText);
+		progressBar.setIndeterminate(true);
+	}
+	
+	private void longProcessFinished (String informationText){
+		MainWindow.this.setCursor(Cursor
+				.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+		lblInformation.setText(informationText);
+		progressBar.setIndeterminate(false);
+		step = 5;
+		showFileProgress();
+	}
+
 	protected void removeSelected() {
 		TreePath currentSelection = tree.getSelectionPath();
 		if (currentSelection != null) {
@@ -416,6 +429,7 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 						break;
 					}
 				}
+				removeFileProgress();
 				currentNode = (DefaultMutableTreeNode) (currentSelection
 						.getLastPathComponent());
 				parent = (DefaultMutableTreeNode) (currentNode.getParent());
@@ -549,6 +563,7 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 		for (File f : files) {
 			if (f.isFile()) {
 				FileTreeNode child = new FileTreeNode(new FileObject(f), false);
+				addFileProgress();
 				treeModel.insertNodeInto(child, root, root.getChildCount());
 			} else if (f.isDirectory() && recursive) {
 				FileTreeNode folder = searchNodeByFileName(f.getName());
@@ -649,19 +664,6 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 			max = m;
 		}
 
-		public synchronized int getNumberOfNodes(TreeModel model) {
-			return getNumberOfNodes(model, model.getRoot());
-		}
-
-		private synchronized int getNumberOfNodes(TreeModel model, Object node) {
-			int count = 1;
-			int nChildren = model.getChildCount(node);
-			for (int i = 0; i < nChildren; i++) {
-				count += getNumberOfNodes(model, model.getChild(node, i));
-			}
-			return count;
-		}
-
 		@Override
 		protected Void doInBackground() throws Exception {
 			double progress = 0.0;
@@ -686,12 +688,43 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 		}
 	}
 
+	public synchronized int getNumberOfNodes(TreeModel model) {
+		return getNumberOfNodes(model, model.getRoot());
+	}
+
+	private synchronized int getNumberOfNodes(TreeModel model, Object node) {
+		int count = 1;
+		int nChildren = model.getChildCount(node);
+		for (int i = 0; i < nChildren; i++) {
+			count += getNumberOfNodes(model, model.getChild(node, i));
+		}
+		return count;
+	}
+	
 	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
-//		if ("progress" == evt.getPropertyName()) {
+		if ("progress" == evt.getPropertyName()) {
 //			int progress = (Integer) evt.getNewValue();
 //			progressBar.setValue(progress);
 //			System.out.println("Progress: " + progress);
-//		}
+		}
+	}
+	
+	private void showFileProgress(){
+		progressBar.setString(String.valueOf(filesAdded));
+	}
+	
+	private void addFileProgress(){
+		filesAdded++;
+		if(filesAdded % step == 0){
+			showFileProgress();
+		}
+	}
+	
+	private void removeFileProgress(){
+		filesAdded--;
+		if(filesAdded % step == 0){
+			showFileProgress();
+		}
 	}
 }
