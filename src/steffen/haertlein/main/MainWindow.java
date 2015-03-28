@@ -470,10 +470,13 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 	protected void addRule() {
 		if (!ruleTextField.getText().trim().isEmpty()) {
 			int before = 0, after = 0;
+			String name = "", text = "";
 			try {
 				before = Integer.parseInt(txtLinesBefore.getText().trim());
 				after = Integer.parseInt(txtLinesAfter.getText().trim());
-				rules.add(new Rule(ruleTextField.getText(), before, after));
+				name = ruleTextField.getText().trim(); //TODO: own textfield
+				text = ruleTextField.getText();
+				rules.add(new Rule(name, text, before, after));
 				setTableData();
 			} catch (NumberFormatException e) {
 				return;
