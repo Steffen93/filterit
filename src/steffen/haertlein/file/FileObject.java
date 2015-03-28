@@ -57,7 +57,6 @@ public class FileObject {
 		if(this.isInitialized){
 			return false;
 		}
-		this.isInitialized = true;
 		try {
 			if (getFileEnding().equals("docx")) {
 				readWordDocument();
@@ -70,6 +69,7 @@ public class FileObject {
 						.readAllLines(f.toPath(), Charset.defaultCharset());
 			}
 			resetLineVisibility();
+			this.isInitialized = true;
 			return true;
 		} catch (IOException e) {
 			System.err.println("File could not be read.");
