@@ -20,6 +20,7 @@ package steffen.haertlein.main;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -32,6 +33,7 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
@@ -45,7 +47,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -86,11 +87,10 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 	private String[] columnNames;
 	private String[][] tableData = new String[0][];
 	private Vector<Rule> rules = new Vector<Rule>();
-	private JTabbedPane tabbedPane;
+	private JPanel contentPane;
 	private Highlighter hiLighter;
 	private Highlighter.HighlightPainter coloredPainter = new DefaultHighlighter.DefaultHighlightPainter(
 			Color.LIGHT_GRAY);
-	private JButton btnContinue;
 	private JButton btnRemove;
 	private JTextField txtLinesBefore;
 	private JTextField txtLinesAfter;
@@ -100,7 +100,12 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 	private JProgressBar progressBar;
 	protected ProgressBarTask task;
 	private int filesAdded;
-	private int step = 5;
+	private ArrayList<JPanel> pageList = new ArrayList<JPanel>();
+	private JPanel outputPanel;
+	private JPanel filesPanel;
+	private JPanel filterRulesPanel;
+	private JButton btnBack;
+	private JButton btnContinue;
 
 	public MainWindow() {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -119,37 +124,17 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 	}
 
 	private void initOutputPanel() {
-		JPanel outputPanel = new JPanel();
-		tabbedPane.addTab("Output", outputPanel);
+		outputPanel = new JPanel(new BorderLayout());
+		outputPanel.setName("output");
+		pageList.add(outputPanel);
 		outputPanel.setLayout(new BorderLayout(0, 0));
 		textArea = new JTextArea();
 		textArea.setEditable(false);
 		JScrollPane textPane = new JScrollPane(textArea);
-		outputPanel.add(textPane);
+		outputPanel.add(textPane, BorderLayout.CENTER);
 		textPane.setMinimumSize(new Dimension(300, 200));
-
+		
 		JPanel southPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-		outputPanel.add(southPanel, BorderLayout.SOUTH);
-
-		JButton btnAdaptFilter = new JButton("Back");
-		btnAdaptFilter.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				changeToPreviousPage();
-			}
-		});
-
-		JButton btnChooseFiles = new JButton("Choose Files");
-		btnChooseFiles.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				tabbedPane.setSelectedIndex(0);
-			}
-		});
-		southPanel.add(btnAdaptFilter);
-
 		JButton btnSave = new JButton("Save...");
 		btnSave.addActionListener(new ActionListener() {
 
@@ -159,14 +144,14 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 			}
 		});
 		southPanel.add(btnSave);
-
+		outputPanel.add(southPanel, BorderLayout.SOUTH);
 		hiLighter = textArea.getHighlighter();
 	}
 
 	private void initFilterRulesPanel() {
-		JPanel filterRulesPanel = new JPanel(new BorderLayout(0, 0));
-		tabbedPane.addTab("Filter Rules", filterRulesPanel);
-		tabbedPane.setEnabledAt(1, false);
+		filterRulesPanel = new JPanel(new BorderLayout(0, 0));
+		filterRulesPanel.setName("filter");
+		pageList.add(filterRulesPanel);
 
 		JPanel northPanel = new JPanel();
 		filterRulesPanel.add(northPanel, BorderLayout.NORTH);
@@ -245,11 +230,11 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 		centerPanel.add(scrollPane);
 		scrollPane.setMinimumSize(new Dimension(150, 200));
 
-		JPanel centerSouthPanel = new JPanel();
-		centerPanel.add(centerSouthPanel, BorderLayout.SOUTH);
+		JPanel southPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		centerPanel.add(southPanel, BorderLayout.SOUTH);
 
 		JButton btnDelRules = new JButton("Delete selected Rule(s)");
-		centerSouthPanel.add(btnDelRules);
+		southPanel.add(btnDelRules);
 		btnDelRules.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				delRules();
@@ -257,7 +242,7 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 		});
 
 		JButton btnDelAllRules = new JButton("Delete all Rules");
-		centerSouthPanel.add(btnDelAllRules);
+		southPanel.add(btnDelAllRules);
 		btnDelAllRules.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(
@@ -268,39 +253,12 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 				}
 			}
 		});
-
-		JPanel southPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-		filterRulesPanel.add(southPanel, BorderLayout.SOUTH);
-
-		JButton btnBack = new JButton("Back");
-		btnBack.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				changeToPreviousPage();
-			}
-		});
-		southPanel.add(btnBack);
-
-		JButton btnApplyFilter = new JButton("Continue");
-		southPanel.add(btnApplyFilter);
-		btnApplyFilter.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				try {
-					applyFilters();
-					tabbedPane.setEnabledAt(2, true);
-				} catch (IOException | BadLocationException e) {
-					e.printStackTrace();
-				}
-			}
-		});
 	}
 
 	private void initFilesPanel() {
-		JPanel filesPanel = new JPanel(new BorderLayout(0, 0));
-		tabbedPane.addTab("Files", filesPanel);
+		filesPanel = new JPanel(new BorderLayout(0, 0));
+		filesPanel.setName("files");
+		pageList.add(filesPanel);
 		tree = new JTree();
 		FileTreeNode root = new FileTreeNode("Files");
 		tree.setModel(new DefaultTreeModel(root));
@@ -308,7 +266,7 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 		tree.addTreeSelectionListener(new TreeSelectionListener() {
 			@Override
 			public void valueChanged(TreeSelectionEvent e) {
-				setRemoveButtonStatus(isTreeHavingNodesButRoot());
+				setRemoveButtonStatus(isTreeHavingNodesButRoot() && !isTreeRootSelected());
 			}
 		});
 
@@ -326,20 +284,20 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 				longProcessStarting("Adding files...");
 				Runnable r = new Runnable() {
 					public void run() {
-//						SwingUtilities.invokeLater(new Runnable() {
-//							@Override
-//							public void run() {
-//							}
-//						});
+						// SwingUtilities.invokeLater(new Runnable() {
+						// @Override
+						// public void run() {
+						// }
+						// });
 						try {
 							addFiles();
 						} catch (Exception e) {
-							longProcessFinished("Files added.");
+							longProcessFinished("Files.");
 						}
 
 						SwingUtilities.invokeLater(new Runnable() {
 							public void run() {
-								longProcessFinished("Files added.");
+								longProcessFinished("Files.");
 							}
 						});
 					}
@@ -361,54 +319,27 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 				longProcessStarting("Removing Selection...");
 				removeSelected();
 				showFileProgress();
-				longProcessFinished("Selection removed.");
+				longProcessFinished("Files.");
 			}
 		});
 		btnRemove.setEnabled(false);
 		northPanel.add(btnRemove);
-
-		JPanel southPanel = new JPanel(new BorderLayout(0, 0));
-		filesPanel.add(southPanel, BorderLayout.SOUTH);
-
-		JPanel westPanel = new JPanel();
-		southPanel.add(westPanel, BorderLayout.WEST);
-
-		progressBar = new JProgressBar(0, 100);
-		progressBar.setStringPainted(true);
-		progressBar.setString("0");
-		westPanel.add(progressBar);
-
-		lblInformation = new JLabel(""); // TODO: replace by loading bar in a
-											// new thread
-		westPanel.add(lblInformation);
-		
-		JPanel eastPanel = new JPanel();
-		southPanel.add(eastPanel, BorderLayout.EAST);
-
-		btnContinue = new JButton("Continue");
-		eastPanel.add(btnContinue);
-		btnContinue.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				changeToNextPage();
-			}
-		});
+		contentPane.add(filesPanel);
 	}
 
-	private void longProcessStarting (String informationText) {
+	private void longProcessStarting(String informationText) {
 		MainWindow.this.setCursor(Cursor
 				.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		lblInformation.setText(informationText);
 		progressBar.setIndeterminate(true);
+		progressBar.setVisible(true);
 	}
-	
-	private void longProcessFinished (String informationText){
+
+	private void longProcessFinished(String informationText) {
 		MainWindow.this.setCursor(Cursor
 				.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 		lblInformation.setText(informationText);
 		progressBar.setIndeterminate(false);
-		step = 5;
 		showFileProgress();
 	}
 
@@ -419,7 +350,7 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 					.getLastPathComponent());
 			DefaultMutableTreeNode parent = (DefaultMutableTreeNode) (currentNode
 					.getParent());
-			while (currentNode != null) {
+			while (currentNode != null && !currentNode.equals(tree.getModel().getRoot())) {
 				if (parent != null) {
 					((DefaultTreeModel) tree.getModel())
 							.removeNodeFromParent(currentNode);
@@ -429,14 +360,14 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 						break;
 					}
 				}
-				removeFileProgress();
 				currentNode = (DefaultMutableTreeNode) (currentSelection
 						.getLastPathComponent());
 				parent = (DefaultMutableTreeNode) (currentNode.getParent());
 			}
+			setFilesAdded(getNumberOfFiles(tree.getModel()));
 			return;
 		}
-
+		setFilesAdded(getNumberOfFiles(tree.getModel()));
 	}
 
 	protected void setRemoveButtonStatus(boolean newVal) {
@@ -452,13 +383,55 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 		return false;
 	}
 
+	protected boolean isTreeRootSelected(){
+		return !(tree.getSelectionPath().getLastPathComponent() != tree.getModel().getRoot());
+	}
+	
 	private void initMainPanel() {
 		mainPanel = new JPanel();
 		getContentPane().add(mainPanel, BorderLayout.CENTER);
 		mainPanel.setLayout(new BorderLayout(0, 0));
-		// TODO: replace tabbedPane by normal pane
-		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		mainPanel.add(tabbedPane);
+		contentPane = new JPanel(new BorderLayout(0, 0));
+		contentPane.setPreferredSize(new Dimension(800, 600));
+		mainPanel.add(contentPane, BorderLayout.CENTER);
+
+		lblInformation = new JLabel("Welcome.");
+		
+		progressBar = new JProgressBar(0, 100);
+		progressBar.setStringPainted(true);
+		progressBar.setString("");
+		
+		btnBack = new JButton("< Back");
+		btnBack.setEnabled(false);
+		btnBack.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				changeToPreviousPage();
+			}
+		});
+		
+		btnContinue = new JButton("Continue >");
+		btnContinue.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				changeToNextPage();
+			}
+		});
+		
+		JPanel southPanel = new JPanel(new BorderLayout());
+		JPanel southEastPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		JPanel southWestPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+		southWestPanel.add(progressBar);
+		southWestPanel.add(lblInformation);
+		
+		southEastPanel.add(btnBack);
+		southEastPanel.add(btnContinue);
+		
+		mainPanel.add(southPanel, BorderLayout.SOUTH);
+		southPanel.add(southEastPanel, BorderLayout.EAST);
+		southPanel.add(southWestPanel, BorderLayout.WEST);
 	}
 
 	protected void saveFile() {
@@ -469,7 +442,7 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 						&& JOptionPane.showConfirmDialog(this,
 								"File already exists. Overwrite existing?",
 								"Confirm override",
-								JOptionPane.YES_NO_CANCEL_OPTION) == JOptionPane.YES_OPTION) {
+								JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
 					Files.write(fileSaveDialog.getSelectedFile().toPath(),
 							textArea.getText().getBytes());
 					JOptionPane.showMessageDialog(this, "Save successful.",
@@ -484,7 +457,6 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 
 	protected void applyFilters() throws IOException, BadLocationException {
 		openFiles();
-		changeToNextPage();
 	}
 
 	protected void addRule() {
@@ -563,7 +535,7 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 		for (File f : files) {
 			if (f.isFile()) {
 				FileTreeNode child = new FileTreeNode(new FileObject(f), false);
-				addFileProgress();
+				setFilesAdded(getFilesAdded()+1);
 				treeModel.insertNodeInto(child, root, root.getChildCount());
 			} else if (f.isDirectory() && recursive) {
 				FileTreeNode folder = searchNodeByFileName(f.getName());
@@ -617,14 +589,54 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 	}
 
 	private void changeToNextPage() {
-		if (tabbedPane.getSelectedIndex() < (tabbedPane.getTabCount() - 1)) {
-			tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex() + 1);
+		if(contentPane.getComponentCount() < 1){
+			return;
+		}
+		int pageIndex = getPageIndex(contentPane.getComponent(0));
+		if (pageIndex < pageList.size()-1) {
+			changeToPage(pageList.get(pageIndex+1));
+			btnBack.setEnabled(true);
+			if (pageIndex+1 == pageList.size()-1){
+				btnContinue.setEnabled(false);
+			}
 		}
 	}
 
+	private int getPageIndex(Component page) {
+		for(int i = 0; i < pageList.size(); i++){
+			if(page.equals(pageList.get(i))){
+				return i;
+			}
+		}
+		return 0;
+	}
+
+	/**
+	 * Shows the specified page on the content pane and repaints the panel.
+	 * Therefore the component 0 (the current page) is removed and replaced by the given one.
+	 * @param page The page to be shown
+	 * */
+	private void changeToPage(Component page){
+		if(contentPane.getComponentCount() < 1){
+			return;
+		}
+		contentPane.remove(0);
+		contentPane.add(page);
+		contentPane.revalidate();
+		contentPane.repaint();
+	}
+	
 	private void changeToPreviousPage() {
-		if (tabbedPane.getSelectedIndex() > 0) {
-			tabbedPane.setSelectedIndex(tabbedPane.getSelectedIndex() - 1);
+		if(contentPane.getComponentCount() < 1){
+			return;
+		}
+		int pageIndex = getPageIndex(contentPane.getComponent(0));
+		if (pageIndex > 0) {
+			changeToPage(pageList.get(pageIndex-1));
+			btnContinue.setEnabled(true);
+			if (pageIndex-1 == 0){
+				btnBack.setEnabled(false);
+			}
 		}
 	}
 
@@ -673,10 +685,9 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 					Thread.sleep(200);
 				} catch (InterruptedException iex) {
 				}
-				progress = 100.0 * getNumberOfNodes(tree
-						.getModel()) / this.max;
+				progress = 100.0 * getNumberOfNodes(tree.getModel()) / this.max;
 				// System.out.println("progress = " + progress);
-				progressBar.setValue(Math.min((int)(progress), 100));
+				progressBar.setValue(Math.min((int) (progress), 100));
 			}
 			return null;
 		}
@@ -701,30 +712,40 @@ public class MainWindow extends JFrame implements PropertyChangeListener {
 		return count;
 	}
 	
+	public synchronized int getNumberOfFiles(TreeModel model) {
+		return getNumberOfFiles(model, model.getRoot());
+	}
+
+	private synchronized int getNumberOfFiles(TreeModel model, Object node) {
+		int count = 0;
+		int nChildren = model.getChildCount(node);
+		for (int i = 0; i < nChildren; i++) {
+			if(((FileTreeNode)model.getChild(node, i)).getUserObject() instanceof FileObject){
+				count++;
+			}
+			count += getNumberOfFiles(model, model.getChild(node, i));
+		}
+		return count;
+	}
+
 	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
 		if ("progress" == evt.getPropertyName()) {
-//			int progress = (Integer) evt.getNewValue();
-//			progressBar.setValue(progress);
-//			System.out.println("Progress: " + progress);
+			// int progress = (Integer) evt.getNewValue();
+			// progressBar.setValue(progress);
+			// System.out.println("Progress: " + progress);
 		}
 	}
-	
-	private void showFileProgress(){
+
+	private void showFileProgress() {
 		progressBar.setString(String.valueOf(filesAdded));
 	}
-	
-	private void addFileProgress(){
-		filesAdded++;
-		if(filesAdded % step == 0){
-			showFileProgress();
-		}
+
+	private void setFilesAdded(int newVal){
+		filesAdded = newVal;
 	}
 	
-	private void removeFileProgress(){
-		filesAdded--;
-		if(filesAdded % step == 0){
-			showFileProgress();
-		}
+	private int getFilesAdded(){
+		return filesAdded;
 	}
 }
